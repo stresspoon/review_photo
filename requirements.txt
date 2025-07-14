@@ -1,0 +1,4 @@
+pyinstaller
+selenium
+requests
+webdriver-manager 

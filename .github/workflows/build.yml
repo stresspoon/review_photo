@@ -1,0 +1,42 @@
+name: Build EXE
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller selenium requests webdriver-manager tkinter
+
+    - name: Download ChromeDriver
+      run: |
+        $chromeDriverPath = "chromedriver.exe"
+        $chromeDriverUrl = "https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_win32.zip"  # 적절한 버전으로 업데이트
+        Invoke-WebRequest -Uri $chromeDriverUrl -OutFile "chromedriver.zip"
+        Expand-Archive "chromedriver.zip" -DestinationPath "."
+        Move-Item -Path "chromedriver.exe" -Destination $chromeDriverPath
+
+    - name: Build EXE
+      run: |
+        pyinstaller --onefile --add-data "chromedriver.exe;." --name review_photo review_photo.py
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: review_photo_exe
+        path: dist/review_photo.exe 
