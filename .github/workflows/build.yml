@@ -35,15 +35,26 @@ jobs:
         Write-Host "Download URL: $chromeDriverUrl"
         
         Invoke-WebRequest -Uri $chromeDriverUrl -OutFile "chromedriver.zip"
-        Expand-Archive "chromedriver.zip" -DestinationPath "." -Force
+        Expand-Archive "chromedriver.zip" -DestinationPath "chromedriver_temp" -Force
         
-        # chromedriver.exe가 하위 폴더에 있을 수 있으므로 찾아서 이동
-        $chromeDriverPath = Get-ChildItem -Recurse -Name "chromedriver.exe" | Select-Object -First 1
-        if ($chromeDriverPath) {
-          Move-Item -Path $chromeDriverPath -Destination "chromedriver.exe" -Force
-          Write-Host "ChromeDriver downloaded and moved to root directory successfully"
+        # chromedriver.exe를 재귀적으로 찾아서 루트 디렉토리로 복사
+        $found = $false
+        Get-ChildItem -Path "chromedriver_temp" -Recurse -Filter "chromedriver.exe" | ForEach-Object {
+          if (-not $found) {
+            Copy-Item -Path $_.FullName -Destination "chromedriver.exe" -Force
+            Write-Host "ChromeDriver found and copied: $($_.FullName)"
+            $found = $true
+          }
+        }
+        
+        # 임시 폴더 정리
+        Remove-Item -Path "chromedriver_temp" -Recurse -Force
+        
+        if (Test-Path "chromedriver.exe") {
+          Write-Host "ChromeDriver setup completed successfully"
         } else {
           Write-Error "ChromeDriver not found after extraction"
+          exit 1
         }
 
     - name: Build EXE
