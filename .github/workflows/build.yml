@@ -23,13 +23,28 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller selenium requests webdriver-manager
 
-    - name: Download ChromeDriver
+    - name: Download Latest ChromeDriver
       run: |
-        $latestVersion = (Invoke-RestMethod -Uri "https://chromedriver.storage.googleapis.com/LATEST_RELEASE").Trim()
-        $chromeDriverUrl = "https://chromedriver.storage.googleapis.com/$latestVersion/chromedriver_win32.zip"
+        # Chrome for Testing API를 사용하여 최신 안정 버전 다운로드
+        $response = Invoke-RestMethod -Uri "https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json"
+        $latestVersion = $response.versions | Where-Object { $_.version -match "^\d+\.\d+\.\d+\.\d+$" } | Sort-Object { [version]$_.version } | Select-Object -Last 1
+        $chromeDriverDownload = $latestVersion.downloads.chromedriver | Where-Object { $_.platform -eq "win32" }
+        $chromeDriverUrl = $chromeDriverDownload.url
+        
+        Write-Host "Downloading ChromeDriver version: $($latestVersion.version)"
+        Write-Host "Download URL: $chromeDriverUrl"
+        
         Invoke-WebRequest -Uri $chromeDriverUrl -OutFile "chromedriver.zip"
-        Expand-Archive "chromedriver.zip" -DestinationPath "."
-        if (Test-Path "chromedriver.exe") { Write-Host "ChromeDriver downloaded successfully" } else { Write-Error "ChromeDriver not found" }
+        Expand-Archive "chromedriver.zip" -DestinationPath "." -Force
+        
+        # chromedriver.exe가 하위 폴더에 있을 수 있으므로 찾아서 이동
+        $chromeDriverPath = Get-ChildItem -Recurse -Name "chromedriver.exe" | Select-Object -First 1
+        if ($chromeDriverPath) {
+          Move-Item -Path $chromeDriverPath -Destination "chromedriver.exe" -Force
+          Write-Host "ChromeDriver downloaded and moved to root directory successfully"
+        } else {
+          Write-Error "ChromeDriver not found after extraction"
+        }
 
     - name: Build EXE
       run: |
