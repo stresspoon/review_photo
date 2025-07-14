@@ -36,7 +36,7 @@ jobs:
         pyinstaller --onefile --add-data "chromedriver.exe;." --name review_photo review_photo.py
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: review_photo_exe
         path: dist/review_photo.exe 
