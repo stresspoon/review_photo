@@ -16,20 +16,20 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x'
+        python-version: '3.11'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller selenium requests webdriver-manager tkinter
+        pip install pyinstaller selenium requests webdriver-manager
 
     - name: Download ChromeDriver
       run: |
-        $chromeDriverPath = "chromedriver.exe"
-        $chromeDriverUrl = "https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_win32.zip"  # 적절한 버전으로 업데이트
+        $latestVersion = (Invoke-RestMethod -Uri "https://chromedriver.storage.googleapis.com/LATEST_RELEASE").Trim()
+        $chromeDriverUrl = "https://chromedriver.storage.googleapis.com/$latestVersion/chromedriver_win32.zip"
         Invoke-WebRequest -Uri $chromeDriverUrl -OutFile "chromedriver.zip"
         Expand-Archive "chromedriver.zip" -DestinationPath "."
-        Move-Item -Path "chromedriver.exe" -Destination $chromeDriverPath
+        if (Test-Path "chromedriver.exe") { Write-Host "ChromeDriver downloaded successfully" } else { Write-Error "ChromeDriver not found" }
 
     - name: Build EXE
       run: |
